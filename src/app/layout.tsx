@@ -25,7 +25,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={manrope.variable}>
-      {/* SAFE MODE: No cursor-none class to ensure mouse visibility */}
       <body className="antialiased bg-background text-foreground overflow-x-hidden">
         <SmoothScroll>
           <CustomCursor />

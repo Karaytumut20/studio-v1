@@ -10,26 +10,19 @@
   --page-padding: 20px;
 }
 
-html {
+html, body {
+  /* CRITICAL: Ensure scroll is always possible */
   height: auto;
   min-height: 100%;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-manrope);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   width: 100%;
+  margin: 0;
+  padding: 0;
   overflow-x: hidden;
-  /* FORCE SCROLL ENABLED */
-  overflow-y: auto !important;
-  /* FORCE NATIVE CURSOR VISIBILITY */
-  cursor: auto !important;
+  overflow-y: auto; /* Force scrollbar */
+  cursor: auto !important; /* Force mouse visibility */
 }
 
-/* Lenis Configuration */
+/* Lenis Recommended */
 html.lenis, html.lenis body {
   height: auto;
 }
@@ -48,10 +41,4 @@ html.lenis, html.lenis body {
 
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
-}
-
-/* Custom Selection */
-::selection {
-  background: #000;
-  color: #fff;
 }
