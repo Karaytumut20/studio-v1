@@ -10,20 +10,48 @@
   --page-padding: 20px;
 }
 
+html {
+  height: auto;
+  min-height: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-manrope);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
+  /* FORCE SCROLL ENABLED */
+  overflow-y: auto !important;
+  /* FORCE NATIVE CURSOR VISIBILITY */
+  cursor: auto !important;
 }
 
-/* Phase 2: Interaction Layers */
-@media (min-width: 768px) {
-  .cursor-none {
-    cursor: none !important;
-  }
-  a, button, [role="button"], input {
-    cursor: none !important;
-  }
+/* Lenis Configuration */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Custom Selection */
+::selection {
+  background: #000;
+  color: #fff;
 }

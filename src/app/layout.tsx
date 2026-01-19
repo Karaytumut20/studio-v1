@@ -14,8 +14,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Studio V1 | Creative Developer Architecture",
-  description: "Awwwards-ready Next.js Architecture",
+  title: "Studio V1",
+  description: "Creative Architecture",
 };
 
 export default function RootLayout({
@@ -25,7 +25,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={manrope.variable}>
-      <body className="antialiased bg-background text-foreground overflow-x-hidden cursor-none">
+      {/* SAFE MODE: No cursor-none class to ensure mouse visibility */}
+      <body className="antialiased bg-background text-foreground overflow-x-hidden">
         <SmoothScroll>
           <CustomCursor />
           <Preloader />

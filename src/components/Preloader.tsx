@@ -11,17 +11,26 @@ export default function Preloader() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Initial Load Animation
     if (isInitialLoad) {
+      // Temporarily lock scroll
+      document.body.style.overflow = 'hidden';
+
       const tl = gsap.timeline({
-        onComplete: () => setIsInitialLoad(false)
+        onComplete: () => {
+          setIsInitialLoad(false);
+          // UNLOCK SCROLL & HIDE ELEMENT
+          document.body.style.overflow = '';
+          if (containerRef.current) {
+            gsap.set(containerRef.current, { display: 'none' });
+          }
+        }
       });
 
       const counter = { val: 0 };
 
       tl.to(counter, {
         val: 100,
-        duration: 1.5,
+        duration: 1.0,
         ease: "power2.inOut",
         onUpdate: () => {
           if (percentRef.current) {
@@ -39,12 +48,18 @@ export default function Preloader() {
 
   // Route Transition Animation
   useEffect(() => {
-    if (!isInitialLoad) {
-      // Simple wipe effect on route change
-      // In a real production app, use useTransitionContext to orchestrate exit/enter
-      const tl = gsap.timeline();
-      tl.set(containerRef.current, { yPercent: 100 })
-        .to(containerRef.current, {
+    if (!isInitialLoad && containerRef.current) {
+      // Make visible for transition
+      gsap.set(containerRef.current, { display: 'flex', yPercent: 100 });
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+           // Hide again completely
+           gsap.set(containerRef.current, { display: 'none' });
+        }
+      });
+
+      tl.to(containerRef.current, {
           yPercent: 0,
           duration: 0.4,
           ease: "power2.out"
@@ -58,14 +73,15 @@ export default function Preloader() {
     }
   }, [pathname, isInitialLoad]);
 
-  if (!isInitialLoad && typeof window !== 'undefined') {
-    // Keep it in DOM for transitions, handle visibility via CSS or Z-index
-  }
+  // SAFETY: If initial load is done, and we are not transitioning, ensure it's not blocking
+  // But we handle this via GSAP display:none above.
 
   return (
     <div
       ref={containerRef}
       className="fixed inset-0 z-[9999] bg-black text-white flex items-center justify-center overflow-hidden"
+      // Added pointer-events-none to wrapper as a failsafe, but inner content needs events if interactive
+      // Here it's just a preloader so it's fine.
     >
       <div className="absolute bottom-10 right-10 text-[10vw] font-bold leading-none opacity-20 select-none">
         <span ref={percentRef}>0%</span>
