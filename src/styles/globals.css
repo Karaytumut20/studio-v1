@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --font-manrope: 'Manrope', sans-serif;
+  --gutter: 20px;
+  --page-padding: 20px;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-manrope);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Phase 2: Interaction Layers */
+@media (min-width: 768px) {
+  .cursor-none {
+    cursor: none !important;
+  }
+  a, button, [role="button"], input {
+    cursor: none !important;
+  }
+}
