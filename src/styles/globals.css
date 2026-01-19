@@ -10,19 +10,50 @@
   --page-padding: 20px;
 }
 
-html, body {
-  /* CRITICAL: Ensure scroll is always possible */
+html {
   height: auto;
   min-height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto; /* Force scrollbar */
-  cursor: auto !important; /* Force mouse visibility */
 }
 
-/* Lenis Recommended */
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-manrope);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  cursor: auto !important;
+}
+
+/* Custom Text Selection */
+::selection {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+::-moz-selection {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+/* Scrollbar Hide (Optional, as custom scrollbar is often preferred) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #000;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}
+
+/* Lenis Configuration */
 html.lenis, html.lenis body {
   height: auto;
 }

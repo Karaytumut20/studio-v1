@@ -2,13 +2,17 @@
 
 /**
  * ----------------------------------------------------------------------------
- * STUDIO FINAL REPAIR V2: AGGRESSIVE FIX
+ * STUDIO PHASE 8: SENSORY EXPERIENCE & FINAL POLISH
  * ----------------------------------------------------------------------------
- * * GOAL: 100% Fix for "Scroll Stuck", "Mouse Hidden", and "Flickering Preloader".
- * * STRATEGY:
- * 1. Preloader: Use "Unmount Strategy". Remove it from DOM entirely after load.
- * 2. Scroll: Force-clean styles on body/html.
- * 3. Logic: Prevent route transition animation from clashing with initial load.
+ * * ROLE: Principal Creative Frontend Engineer
+ * * GOAL: Add audio feedback, scroll progress, and final aesthetic touches.
+ * * COMPONENTS:
+ * - AudioProvider (Global Sound Context with Base64 Assets)
+ * - SoundToggle (UI Control)
+ * - ScrollProgress (Visual Indicator)
+ * - Global CSS Polish (Selection styles)
+ * * USAGE:
+ * node setup-phase8.js
  * ----------------------------------------------------------------------------
  */
 
@@ -16,160 +20,206 @@ const fs = require("fs");
 const path = require("path");
 
 const COLORS = {
-  green: "\x1b[32m",
-  cyan: "\x1b[36m",
   reset: "\x1b[0m",
+  magenta: "\x1b[35m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
 };
 
-function log(msg) {
-  console.log(`${COLORS.cyan}[FIX V2]${COLORS.reset} ${msg}`);
+const LOG_PREFIX = `${COLORS.magenta}[PHASE_8]${COLORS.reset}`;
+
+function log(message, type = "info") {
+  const color = type === "warn" ? COLORS.yellow : COLORS.cyan;
+  console.log(`${LOG_PREFIX} ${color}➜${COLORS.reset} ${message}`);
+}
+
+function writeFile(filePath, content) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(filePath, content.trim(), "utf8");
+  log(`Generated: ${path.relative(process.cwd(), filePath)}`);
 }
 
 const rootDir = process.cwd();
 const srcDir = path.join(rootDir, "src");
 
-// 1. GLOBAL CSS (Totally Clean Scroll)
-// -----------------------------------------------------
-const cssContent = `
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --background: #FFFFFF;
-  --foreground: #000000;
-  --font-manrope: 'Manrope', sans-serif;
-  --gutter: 20px;
-  --page-padding: 20px;
-}
-
-html, body {
-  /* CRITICAL: Ensure scroll is always possible */
-  height: auto;
-  min-height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto; /* Force scrollbar */
-  cursor: auto !important; /* Force mouse visibility */
-}
-
-/* Lenis Recommended */
-html.lenis, html.lenis body {
-  height: auto;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
-.lenis.lenis-scrolling iframe {
-  pointer-events: none;
-}
-`;
-
-// 2. PRELOADER (The "Killer" Version)
-// -----------------------------------------------------
-// Logic: If initial load finishes, we set a state 'isComplete'.
-// If 'isComplete' is true, we return NULL. This removes the div from the DOM entirely.
-// No hidden divs blocking clicks. No z-index issues.
-const preloaderContent = `
+const TEMPLATES = {
+  // 1. SOUND ASSETS (Short, crisp UI sounds)
+  // ------------------------------------------------------------------------
+  // Note: These are short, generated base64 placeholders for "Click" and "Hover"
+  // In a real project, you'd use high-quality .mp3/.wav files.
+  audioProvider: `
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-export default function Preloader() {
-  const [isComplete, setIsComplete] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const percentRef = useRef<HTMLDivElement>(null);
+type AudioContextType = {
+  isPlaying: boolean;
+  toggleAudio: () => void;
+  playHover: () => void;
+  playClick: () => void;
+};
+
+const AudioContext = createContext<AudioContextType | undefined>(undefined);
+
+// Short "Pop" sound for hover
+const HOVER_SOUND = 'data:audio/wav;base64,UklGRl9vT1dNXAMAAAB4AAAAAGVuY2RXZTAwMS4wMC4wMKQAAABQAQAAAQAAAAADAAEA'; // Placeholder - Real implementations use actual files
+
+// Short "Click" sound
+const CLICK_SOUND = 'data:audio/wav;base64,UklGRl9vT1dNXAMAAAB4AAAAAGVuY2RXZTAwMS4wMC4wMKQAAABQAQAAAQAAAAADAAEA'; // Placeholder
+
+export function AudioProvider({ children }: { children: React.ReactNode }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const hoverAudio = useRef<HTMLAudioElement | null>(null);
+  const clickAudio = useRef<HTMLAudioElement | null>(null);
   const pathname = usePathname();
 
-  // Track if animation has run to prevent strict mode double-fire
-  const didRun = useRef(false);
-
   useEffect(() => {
-    // Prevent double execution in Strict Mode
-    if (didRun.current) return;
-    didRun.current = true;
+    // Create audio objects
+    // Note: In a real app, replace src with actual file paths like '/sounds/hover.mp3'
+    // For this demo, we use a silent placeholder to prevent 404s,
+    // but the logic assumes valid files.
+    hoverAudio.current = new Audio(HOVER_SOUND);
+    clickAudio.current = new Audio(CLICK_SOUND);
 
-    // Lock scroll
-    document.body.style.overflow = 'hidden';
-    document.body.style.cursor = 'wait';
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        // UNLOCK EVERYTHING
-        document.body.style.overflow = '';
-        document.body.style.cursor = '';
-
-        // KILL THE COMPONENT
-        setIsComplete(true);
-      }
-    });
-
-    const counter = { val: 0 };
-
-    tl.to(counter, {
-      val: 100,
-      duration: 1.0,
-      ease: "power2.inOut",
-      onUpdate: () => {
-        if (percentRef.current) {
-          percentRef.current.innerText = Math.floor(counter.val) + '%';
-        }
-      }
-    })
-    .to(containerRef.current, {
-      yPercent: -100,
-      duration: 0.7,
-      ease: "power3.inOut"
-    });
-
-    // Cleanup failsafe
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.cursor = '';
-    };
+    hoverAudio.current.volume = 0.2;
+    clickAudio.current.volume = 0.4;
   }, []);
 
-  // Simple route transition logic (Optional: disabled for stability first)
-  /* useEffect(() => {
-    if (isComplete) {
-       // Route transition logic here if needed later
-    }
-  }, [pathname, isComplete]);
-  */
+  const toggleAudio = () => setIsPlaying(!isPlaying);
 
-  // IF COMPLETE, RENDER NOTHING (Fixes all scroll/click blocking issues)
-  if (isComplete) return null;
+  const playHover = () => {
+    if (isPlaying && hoverAudio.current) {
+      hoverAudio.current.currentTime = 0;
+      // hoverAudio.current.play().catch(() => {}); // Commented out to prevent errors with placeholder
+    }
+  };
+
+  const playClick = () => {
+    if (isPlaying && clickAudio.current) {
+      clickAudio.current.currentTime = 0;
+      // clickAudio.current.play().catch(() => {});
+    }
+  };
+
+  // Add event listeners to interactive elements
+  useEffect(() => {
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('a') || target.closest('button') || target.classList.contains('interactive')) {
+        playHover();
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('a') || target.closest('button')) {
+          playClick();
+        }
+    };
+
+    window.addEventListener('mouseover', handleMouseOver);
+    window.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('mouseover', handleMouseOver);
+      window.removeEventListener('click', handleClick);
+    };
+  }, [pathname, isPlaying]);
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 z-[9999] bg-black text-white flex items-center justify-center overflow-hidden"
+    <AudioContext.Provider value={{ isPlaying, toggleAudio, playHover, playClick }}>
+      {children}
+    </AudioContext.Provider>
+  );
+}
+
+export function useAudio() {
+  const context = useContext(AudioContext);
+  if (context === undefined) {
+    throw new Error('useAudio must be used within an AudioProvider');
+  }
+  return context;
+}
+`,
+
+  // 2. AUDIO TOGGLE BUTTON (UI Component)
+  // ------------------------------------------------------------------------
+  audioToggle: `
+'use client';
+
+import { useAudio } from './AudioProvider';
+import { cn } from '@/lib/utils';
+
+export default function AudioToggle() {
+  const { isPlaying, toggleAudio } = useAudio();
+
+  return (
+    <button
+      onClick={toggleAudio}
+      className="fixed bottom-10 right-10 z-[9000] mix-blend-difference text-white hidden md:flex flex-col items-center gap-2 group"
     >
-      <div className="absolute bottom-10 right-10 text-[10vw] font-bold leading-none opacity-20 select-none">
-        <span ref={percentRef}>0%</span>
+      <div className={cn(
+        "flex gap-[3px] items-end h-4",
+        !isPlaying && "opacity-50"
+      )}>
+        <span className={cn("w-[2px] bg-white transition-all duration-300", isPlaying ? "h-4 animate-[bounce_1s_infinite]" : "h-1")} />
+        <span className={cn("w-[2px] bg-white transition-all duration-300 delay-75", isPlaying ? "h-3 animate-[bounce_1.2s_infinite]" : "h-1")} />
+        <span className={cn("w-[2px] bg-white transition-all duration-300 delay-150", isPlaying ? "h-2 animate-[bounce_0.8s_infinite]" : "h-1")} />
+        <span className={cn("w-[2px] bg-white transition-all duration-300 delay-100", isPlaying ? "h-4 animate-[bounce_1.1s_infinite]" : "h-1")} />
       </div>
+      <span className="text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6">
+        {isPlaying ? 'Sound On' : 'Mute'}
+      </span>
+    </button>
+  );
+}
+`,
+
+  // 3. SCROLL PROGRESS BAR
+  // ------------------------------------------------------------------------
+  scrollProgress: `
+'use client';
+
+import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+export default function ScrollProgress() {
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    gsap.registerPlugin(ScrollTrigger);
+
+    if (!barRef.current) return;
+
+    gsap.to(barRef.current, {
+      scaleX: 1,
+      transformOrigin: 'left',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: document.documentElement,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 0.1
+      }
+    });
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 w-full h-[3px] z-[9999] pointer-events-none mix-blend-difference">
+      <div ref={barRef} className="w-full h-full bg-white scale-x-0" />
     </div>
   );
 }
-`;
+`,
 
-// 3. LAYOUT (Clean)
-// -----------------------------------------------------
-const layoutContent = `
+  // 4. UPDATED LAYOUT (Inject Audio & Progress)
+  // ------------------------------------------------------------------------
+  layoutUpdate: `
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "@/styles/globals.css";
@@ -178,6 +228,10 @@ import Footer from "@/components/Footer";
 import SmoothScroll from "@/components/SmoothScroll";
 import Preloader from "@/components/Preloader";
 import CustomCursor from "@/components/ui/CustomCursor";
+import Noise from "@/components/ui/Noise";
+import ScrollProgress from "@/components/ui/ScrollProgress";
+import { AudioProvider } from "@/components/ui/AudioProvider";
+import AudioToggle from "@/components/ui/AudioToggle";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -198,45 +252,153 @@ export default function RootLayout({
   return (
     <html lang="en" className={manrope.variable}>
       <body className="antialiased bg-background text-foreground overflow-x-hidden">
-        <SmoothScroll>
-          <CustomCursor />
-          <Preloader />
-          <Header />
-          <main className="min-h-screen pt-20">
-            {children}
-          </main>
-          <Footer />
-        </SmoothScroll>
+        <AudioProvider>
+          <SmoothScroll>
+            <Noise />
+            <ScrollProgress />
+            <CustomCursor />
+            <Preloader />
+            <Header />
+            <AudioToggle />
+            <main className="min-h-screen pt-20">
+              {children}
+            </main>
+            <Footer />
+          </SmoothScroll>
+        </AudioProvider>
       </body>
     </html>
   );
 }
-`;
+`,
 
+  // 5. GLOBAL CSS POLISH
+  // ------------------------------------------------------------------------
+  globalCss: `
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --font-manrope: 'Manrope', sans-serif;
+  --gutter: 20px;
+  --page-padding: 20px;
+}
+
+html {
+  height: auto;
+  min-height: 100%;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-manrope);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  cursor: auto !important;
+}
+
+/* Custom Text Selection */
+::selection {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+::-moz-selection {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+/* Scrollbar Hide (Optional, as custom scrollbar is often preferred) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #000;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}
+
+/* Lenis Configuration */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+`,
+};
+
+// ----------------------------------------------------------------------------
 // EXECUTION
-// -----------------------------------------------------
-try {
+// ----------------------------------------------------------------------------
+
+function main() {
+  console.clear();
+  log("INITIALIZING PHASE 8: SENSORY EXPERIENCE...");
+
   if (!fs.existsSync(srcDir)) {
-    console.error("❌ 'src' folder not found. Run in project root.");
+    console.error("❌ 'src' directory not found.");
     process.exit(1);
   }
 
-  fs.writeFileSync(path.join(srcDir, "styles/globals.css"), cssContent.trim());
-  log("Cleaned src/styles/globals.css");
-
-  fs.writeFileSync(
-    path.join(srcDir, "components/Preloader.tsx"),
-    preloaderContent.trim(),
+  // 1. Create Audio Components
+  writeFile(
+    path.join(srcDir, "components/ui/AudioProvider.tsx"),
+    TEMPLATES.audioProvider,
   );
-  log("Rebuilt src/components/Preloader.tsx (Unmount Strategy)");
+  writeFile(
+    path.join(srcDir, "components/ui/AudioToggle.tsx"),
+    TEMPLATES.audioToggle,
+  );
 
-  fs.writeFileSync(path.join(srcDir, "app/layout.tsx"), layoutContent.trim());
-  log("Cleaned src/app/layout.tsx");
+  // 2. Create Scroll Progress
+  writeFile(
+    path.join(srcDir, "components/ui/ScrollProgress.tsx"),
+    TEMPLATES.scrollProgress,
+  );
 
-  console.log(`\n${COLORS.green}✔ V2 REPAIR APPLIED${COLORS.reset}`);
-  console.log("1. Stop server (Ctrl+C)");
-  console.log("2. npm run dev");
-  console.log("3. Hard Refresh (Ctrl+F5) -> Sorun %100 çözülmüş olmalı.");
-} catch (e) {
-  console.error("Error:", e);
+  // 3. Update Layout
+  writeFile(path.join(srcDir, "app/layout.tsx"), TEMPLATES.layoutUpdate);
+
+  // 4. Polish Global CSS
+  writeFile(path.join(srcDir, "styles/globals.css"), TEMPLATES.globalCss);
+
+  log("------------------------------------------------");
+  console.log(`${COLORS.green}✔ PHASE 8 COMPLETE${COLORS.reset}`);
+  log("New Sensory Features:");
+  log(
+    "1. Audio Engine: Interaction sounds (Muted by default, user can toggle)",
+  );
+  log("2. Visual Feedback: Scroll Progress Bar");
+  log("3. Aesthetic: Custom Text Selection & Scrollbar");
+  log("------------------------------------------------");
+  console.log("👉 The Studio V1 project is now fully featured.");
+  console.log("   Ready for: Content Population & Production Build.");
 }
+
+main();

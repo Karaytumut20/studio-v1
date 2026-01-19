@@ -6,6 +6,10 @@ import Footer from "@/components/Footer";
 import SmoothScroll from "@/components/SmoothScroll";
 import Preloader from "@/components/Preloader";
 import CustomCursor from "@/components/ui/CustomCursor";
+import Noise from "@/components/ui/Noise";
+import ScrollProgress from "@/components/ui/ScrollProgress";
+import { AudioProvider } from "@/components/ui/AudioProvider";
+import AudioToggle from "@/components/ui/AudioToggle";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -26,15 +30,20 @@ export default function RootLayout({
   return (
     <html lang="en" className={manrope.variable}>
       <body className="antialiased bg-background text-foreground overflow-x-hidden">
-        <SmoothScroll>
-          <CustomCursor />
-          <Preloader />
-          <Header />
-          <main className="min-h-screen pt-20">
-            {children}
-          </main>
-          <Footer />
-        </SmoothScroll>
+        <AudioProvider>
+          <SmoothScroll>
+            <Noise />
+            <ScrollProgress />
+            <CustomCursor />
+            <Preloader />
+            <Header />
+            <AudioToggle />
+            <main className="min-h-screen pt-20">
+              {children}
+            </main>
+            <Footer />
+          </SmoothScroll>
+        </AudioProvider>
       </body>
     </html>
   );
