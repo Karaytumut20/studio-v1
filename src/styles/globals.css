@@ -6,56 +6,27 @@
   --background: #FFFFFF;
   --foreground: #000000;
   --font-manrope: 'Manrope', sans-serif;
-  --gutter: 20px;
-  --page-padding: 20px;
 }
 
-html {
+html.lenis, html.lenis body {
   height: auto;
-  min-height: 100%;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-manrope);
+  font-weight: 300; /* Makhno/McAlpine hissiyatı için Light varsayılan */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   width: 100%;
   overflow-x: hidden;
-  overflow-y: auto !important;
-  cursor: auto !important;
 }
 
-/* Custom Text Selection */
+/* Minimalist Selection */
 ::selection {
   background: #000000;
   color: #FFFFFF;
-}
-
-::-moz-selection {
-  background: #000000;
-  color: #FFFFFF;
-}
-
-/* Scrollbar Hide (Optional, as custom scrollbar is often preferred) */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #000;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #333;
-}
-
-/* Lenis Configuration */
-html.lenis, html.lenis body {
-  height: auto;
 }
 
 .lenis.lenis-smooth {
@@ -68,8 +39,4 @@ html.lenis, html.lenis body {
 
 .lenis.lenis-stopped {
   overflow: hidden;
-}
-
-.lenis.lenis-scrolling iframe {
-  pointer-events: none;
 }

@@ -14,16 +14,22 @@ const config: Config = {
         sans: ["var(--font-manrope)", "sans-serif"],
       },
       spacing: {
-        'gutter': 'var(--gutter)',
-        'page-padding': 'var(--page-padding)',
+        'gutter': '20px',
+        'page-padding': '20px',
       },
+      // Clamp ve Minimal Tipografi Ayarları (Referans sitelere uygun)
       fontSize: {
-        'display': ['clamp(3rem, 10vw, 8rem)', { lineHeight: '0.9', letterSpacing: '-0.04em' }],
-        'h1': ['clamp(2.5rem, 6vw, 5rem)', { lineHeight: '1.0', letterSpacing: '-0.03em' }],
-        'h2': ['clamp(2rem, 5vw, 4rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        'h3': ['clamp(1.5rem, 3vw, 2.5rem)', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
-        'body': ['clamp(1rem, 1.2vw, 1.25rem)', { lineHeight: '1.5', letterSpacing: '-0.01em' }],
+        'display': ['clamp(2.5rem, 8vw, 7rem)', { lineHeight: '0.9', letterSpacing: '-0.04em', fontWeight: '200' }],
+        'h1': ['clamp(2rem, 5vw, 4.5rem)', { lineHeight: '1.0', letterSpacing: '-0.03em', fontWeight: '300' }],
+        'h2': ['clamp(1.5rem, 4vw, 3.5rem)', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '300' }],
+        'body': ['clamp(1rem, 1.1vw, 1.125rem)', { lineHeight: '1.6', letterSpacing: '-0.01em', fontWeight: '300' }],
       },
+      height: {
+        'screen': '100svh', // Viewport fix (svh kullanımı)
+      },
+      minHeight: {
+        'screen': '100svh', // Viewport fix
+      }
     },
   },
   plugins: [],

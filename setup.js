@@ -1,404 +1,243 @@
-#!/usr/bin/env node
-
 /**
- * ----------------------------------------------------------------------------
- * STUDIO PHASE 8: SENSORY EXPERIENCE & FINAL POLISH
- * ----------------------------------------------------------------------------
- * * ROLE: Principal Creative Frontend Engineer
- * * GOAL: Add audio feedback, scroll progress, and final aesthetic touches.
- * * COMPONENTS:
- * - AudioProvider (Global Sound Context with Base64 Assets)
- * - SoundToggle (UI Control)
- * - ScrollProgress (Visual Indicator)
- * - Global CSS Polish (Selection styles)
- * * USAGE:
- * node setup-phase8.js
- * ----------------------------------------------------------------------------
+ * setup-grid-update.js
+ * * GÖREV: Work sayfası ve Anasayfa Proje bölümünü 2'li Grid sistemine çevirmek.
+ * DETAYLAR:
+ * - Layout: Desktop'ta 2 kolon (md:grid-cols-2), Mobil'de 1 kolon.
+ * - İçerik: Görsel + Başlık + Uzun Açıklama.
+ * - Stil: Minimal, ferah boşluklar (gap), ince tipografi.
  */
 
 const fs = require("fs");
 const path = require("path");
 
-const COLORS = {
-  reset: "\x1b[0m",
-  magenta: "\x1b[35m",
-  cyan: "\x1b[36m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-};
-
-const LOG_PREFIX = `${COLORS.magenta}[PHASE_8]${COLORS.reset}`;
-
-function log(message, type = "info") {
-  const color = type === "warn" ? COLORS.yellow : COLORS.cyan;
-  console.log(`${LOG_PREFIX} ${color}➜${COLORS.reset} ${message}`);
-}
+const rootDir = process.cwd();
+const srcDir = path.join(rootDir, "src");
 
 function writeFile(filePath, content) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(filePath, content.trim(), "utf8");
-  log(`Generated: ${path.relative(process.cwd(), filePath)}`);
+  console.log(`✅ Güncellendi: ${path.relative(process.cwd(), filePath)}`);
 }
 
-const rootDir = process.cwd();
-const srcDir = path.join(rootDir, "src");
-
-const TEMPLATES = {
-  // 1. SOUND ASSETS (Short, crisp UI sounds)
-  // ------------------------------------------------------------------------
-  // Note: These are short, generated base64 placeholders for "Click" and "Hover"
-  // In a real project, you'd use high-quality .mp3/.wav files.
-  audioProvider: `
+// 1. WORK PAGE (src/app/work/page.tsx)
+// 2'li Grid, Uzun Açıklama, TextReveal Başlıklar
+const workPageContent = `
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { WORKS } from "@/data/works";
+import { useRef } from "react";
+import Link from "next/link";
+import ParallaxImage from "@/components/ui/ParallaxImage";
+import TextReveal from "@/components/ui/TextReveal";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-type AudioContextType = {
-  isPlaying: boolean;
-  toggleAudio: () => void;
-  playHover: () => void;
-  playClick: () => void;
-};
-
-const AudioContext = createContext<AudioContextType | undefined>(undefined);
-
-// Short "Pop" sound for hover
-const HOVER_SOUND = 'data:audio/wav;base64,UklGRl9vT1dNXAMAAAB4AAAAAGVuY2RXZTAwMS4wMC4wMKQAAABQAQAAAQAAAAADAAEA'; // Placeholder - Real implementations use actual files
-
-// Short "Click" sound
-const CLICK_SOUND = 'data:audio/wav;base64,UklGRl9vT1dNXAMAAAB4AAAAAGVuY2RXZTAwMS4wMC4wMKQAAABQAQAAAQAAAAADAAEA'; // Placeholder
-
-export function AudioProvider({ children }: { children: React.ReactNode }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const hoverAudio = useRef<HTMLAudioElement | null>(null);
-  const clickAudio = useRef<HTMLAudioElement | null>(null);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    // Create audio objects
-    // Note: In a real app, replace src with actual file paths like '/sounds/hover.mp3'
-    // For this demo, we use a silent placeholder to prevent 404s,
-    // but the logic assumes valid files.
-    hoverAudio.current = new Audio(HOVER_SOUND);
-    clickAudio.current = new Audio(CLICK_SOUND);
-
-    hoverAudio.current.volume = 0.2;
-    clickAudio.current.volume = 0.4;
-  }, []);
-
-  const toggleAudio = () => setIsPlaying(!isPlaying);
-
-  const playHover = () => {
-    if (isPlaying && hoverAudio.current) {
-      hoverAudio.current.currentTime = 0;
-      // hoverAudio.current.play().catch(() => {}); // Commented out to prevent errors with placeholder
-    }
-  };
-
-  const playClick = () => {
-    if (isPlaying && clickAudio.current) {
-      clickAudio.current.currentTime = 0;
-      // clickAudio.current.play().catch(() => {});
-    }
-  };
-
-  // Add event listeners to interactive elements
-  useEffect(() => {
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('a') || target.closest('button') || target.classList.contains('interactive')) {
-        playHover();
-      }
-    };
-
-    const handleClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('a') || target.closest('button')) {
-          playClick();
-        }
-    };
-
-    window.addEventListener('mouseover', handleMouseOver);
-    window.addEventListener('click', handleClick);
-
-    return () => {
-      window.removeEventListener('mouseover', handleMouseOver);
-      window.removeEventListener('click', handleClick);
-    };
-  }, [pathname, isPlaying]);
-
-  return (
-    <AudioContext.Provider value={{ isPlaying, toggleAudio, playHover, playClick }}>
-      {children}
-    </AudioContext.Provider>
-  );
-}
-
-export function useAudio() {
-  const context = useContext(AudioContext);
-  if (context === undefined) {
-    throw new Error('useAudio must be used within an AudioProvider');
-  }
-  return context;
-}
-`,
-
-  // 2. AUDIO TOGGLE BUTTON (UI Component)
-  // ------------------------------------------------------------------------
-  audioToggle: `
-'use client';
-
-import { useAudio } from './AudioProvider';
-import { cn } from '@/lib/utils';
-
-export default function AudioToggle() {
-  const { isPlaying, toggleAudio } = useAudio();
-
-  return (
-    <button
-      onClick={toggleAudio}
-      className="fixed bottom-10 right-10 z-[9000] mix-blend-difference text-white hidden md:flex flex-col items-center gap-2 group"
-    >
-      <div className={cn(
-        "flex gap-[3px] items-end h-4",
-        !isPlaying && "opacity-50"
-      )}>
-        <span className={cn("w-[2px] bg-white transition-all duration-300", isPlaying ? "h-4 animate-[bounce_1s_infinite]" : "h-1")} />
-        <span className={cn("w-[2px] bg-white transition-all duration-300 delay-75", isPlaying ? "h-3 animate-[bounce_1.2s_infinite]" : "h-1")} />
-        <span className={cn("w-[2px] bg-white transition-all duration-300 delay-150", isPlaying ? "h-2 animate-[bounce_0.8s_infinite]" : "h-1")} />
-        <span className={cn("w-[2px] bg-white transition-all duration-300 delay-100", isPlaying ? "h-4 animate-[bounce_1.1s_infinite]" : "h-1")} />
-      </div>
-      <span className="text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6">
-        {isPlaying ? 'Sound On' : 'Mute'}
-      </span>
-    </button>
-  );
-}
-`,
-
-  // 3. SCROLL PROGRESS BAR
-  // ------------------------------------------------------------------------
-  scrollProgress: `
-'use client';
-
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-export default function ScrollProgress() {
-  const barRef = useRef<HTMLDivElement>(null);
+export default function WorkPage() {
+  const container = useRef(null);
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    if (!barRef.current) return;
+    // Grid elemanlarının sırayla (stagger) gelmesi için basit bir animasyon
+    const items = gsap.utils.toArray('.work-item');
 
-    gsap.to(barRef.current, {
-      scaleX: 1,
-      transformOrigin: 'left',
-      ease: 'none',
-      scrollTrigger: {
-        trigger: document.documentElement,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 0.1
-      }
+    items.forEach((item: any, i) => {
+      gsap.from(item, {
+        y: 50,
+        opacity: 0,
+        duration: 1,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: item,
+          start: "top 85%",
+        }
+      });
     });
-  }, []);
+
+  }, { scope: container });
 
   return (
-    <div className="fixed top-0 left-0 w-full h-[3px] z-[9999] pointer-events-none mix-blend-difference">
-      <div ref={barRef} className="w-full h-full bg-white scale-x-0" />
+    <div ref={container} className="pt-32 pb-20 px-page-padding">
+      <div className="mb-24">
+        <h1 className="text-display uppercase font-light tracking-tighter leading-[0.85] mb-8">
+          <TextReveal>Work</TextReveal>
+          <TextReveal delay={0.1}>Archive</TextReveal>
+        </h1>
+        <div className="h-[1px] w-full bg-black/10 mt-8" />
+      </div>
+
+      {/* 2'li Grid Sistemi */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-24 md:gap-y-32">
+        {WORKS.map((work, index) => (
+          <Link
+            key={work.id}
+            href={\`/work/\${work.id}\`}
+            className="work-item group block w-full"
+          >
+            {/* Görsel Alanı */}
+            <div className="w-full aspect-[4/3] overflow-hidden bg-neutral-100 mb-8 relative">
+               <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-1000 ease-[0.25,1,0.5,1]">
+                 <ParallaxImage src={work.coverImage} alt={work.title} speed={1.1} />
+               </div>
+            </div>
+
+            {/* İçerik Alanı */}
+            <div className="flex flex-col gap-4">
+               {/* Başlık ve Kategori */}
+               <div className="flex justify-between items-baseline border-b border-black/10 pb-4">
+                  <h2 className="text-h3 font-light uppercase tracking-tight group-hover:underline underline-offset-4 decoration-1">
+                    {work.title}
+                  </h2>
+                  <span className="text-xs font-mono opacity-40 uppercase tracking-widest">
+                    {work.category} — {work.year}
+                  </span>
+               </div>
+
+               {/* Uzun Açıklama */}
+               <p className="text-body font-light opacity-70 leading-relaxed text-justify">
+                 {work.description}
+               </p>
+
+               {/* Read More Linki (Opsiyonel Estetik) */}
+               <div className="pt-2">
+                 <span className="text-xs uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">
+                   ( View Case )
+                 </span>
+               </div>
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
-`,
+`;
 
-  // 4. UPDATED LAYOUT (Inject Audio & Progress)
-  // ------------------------------------------------------------------------
-  layoutUpdate: `
-import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
-import "@/styles/globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import SmoothScroll from "@/components/SmoothScroll";
-import Preloader from "@/components/Preloader";
-import CustomCursor from "@/components/ui/CustomCursor";
-import Noise from "@/components/ui/Noise";
-import ScrollProgress from "@/components/ui/ScrollProgress";
-import { AudioProvider } from "@/components/ui/AudioProvider";
-import AudioToggle from "@/components/ui/AudioToggle";
+// 2. PROJECTS SECTION (src/components/home/ProjectsSection.tsx)
+// Anasayfa için aynı 2'li grid yapısı
+const projectsSectionContent = `
+'use client';
 
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-  weight: ["200", "300", "400", "500", "600", "700", "800"],
-});
+import { WORKS } from "@/data/works";
+import { useRef } from "react";
+import Link from "next/link";
+import ParallaxImage from "@/components/ui/ParallaxImage";
+import TextReveal from "@/components/ui/TextReveal";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-export const metadata: Metadata = {
-  title: "Studio V1",
-  description: "Creative Architecture",
-};
+export default function ProjectsSection() {
+  const container = useRef(null);
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+  useGSAP(() => {
+    gsap.registerPlugin(ScrollTrigger);
+
+    const cards = gsap.utils.toArray('.home-project-item');
+
+    cards.forEach((card: any) => {
+      gsap.from(card, {
+        scrollTrigger: {
+          trigger: card,
+          start: "top bottom-=100",
+        },
+        y: 60,
+        opacity: 0,
+        duration: 1.2,
+        ease: "power3.out"
+      });
+    });
+  }, { scope: container });
+
   return (
-    <html lang="en" className={manrope.variable}>
-      <body className="antialiased bg-background text-foreground overflow-x-hidden">
-        <AudioProvider>
-          <SmoothScroll>
-            <Noise />
-            <ScrollProgress />
-            <CustomCursor />
-            <Preloader />
-            <Header />
-            <AudioToggle />
-            <main className="min-h-screen pt-20">
-              {children}
-            </main>
-            <Footer />
-          </SmoothScroll>
-        </AudioProvider>
-      </body>
-    </html>
+    <section ref={container} className="py-32 px-page-padding bg-white">
+      <div className="flex justify-between items-end mb-20 border-b border-black/10 pb-10">
+        <h2 className="text-h2 uppercase font-light tracking-tight leading-none">
+          <TextReveal>Selected</TextReveal>
+          <TextReveal delay={0.1}>Works</TextReveal>
+        </h2>
+        <Link href="/work" className="text-sm uppercase tracking-widest underline underline-offset-4 hidden md:block hover:opacity-60 transition-opacity">
+          View All Projects
+        </Link>
+      </div>
+
+      {/* 2'li Grid - Anasayfa Limiti: İlk 4 proje */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-24 md:gap-y-32">
+        {WORKS.slice(0, 4).map((work, i) => (
+          <Link href={\`/work/\${work.id}\`} key={work.id} className="home-project-item group block w-full">
+            {/* Görsel */}
+            <div className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-8 relative">
+              <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-1000 ease-out">
+                 <ParallaxImage src={work.coverImage} alt={work.title} speed={1.1} />
+              </div>
+            </div>
+
+            {/* İçerik */}
+            <div className="flex flex-col gap-4">
+               <div className="flex justify-between items-baseline border-b border-black/10 pb-4">
+                  <h3 className="text-3xl uppercase font-light mb-1 group-hover:translate-x-2 transition-transform duration-300">
+                    {work.title}
+                  </h3>
+                  <span className="text-xs font-mono opacity-40">0{i + 1}</span>
+               </div>
+
+               {/* Uzun Açıklama */}
+               <p className="text-body font-light opacity-70 leading-relaxed line-clamp-4 md:line-clamp-none">
+                  {work.description}
+               </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-20 text-center md:hidden">
+        <Link href="/work" className="inline-block px-8 py-4 border border-black rounded-full uppercase text-xs tracking-widest">
+          View All Projects
+        </Link>
+      </div>
+    </section>
   );
 }
-`,
+`;
 
-  // 5. GLOBAL CSS POLISH
-  // ------------------------------------------------------------------------
-  globalCss: `
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --background: #FFFFFF;
-  --foreground: #000000;
-  --font-manrope: 'Manrope', sans-serif;
-  --gutter: 20px;
-  --page-padding: 20px;
-}
-
-html {
-  height: auto;
-  min-height: 100%;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-manrope);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  width: 100%;
-  overflow-x: hidden;
-  overflow-y: auto !important;
-  cursor: auto !important;
-}
-
-/* Custom Text Selection */
-::selection {
-  background: #000000;
-  color: #FFFFFF;
-}
-
-::-moz-selection {
-  background: #000000;
-  color: #FFFFFF;
-}
-
-/* Scrollbar Hide (Optional, as custom scrollbar is often preferred) */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #000;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #333;
-}
-
-/* Lenis Configuration */
-html.lenis, html.lenis body {
-  height: auto;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
-.lenis.lenis-scrolling iframe {
-  pointer-events: none;
-}
-`,
-};
-
-// ----------------------------------------------------------------------------
 // EXECUTION
-// ----------------------------------------------------------------------------
-
 function main() {
-  console.clear();
-  log("INITIALIZING PHASE 8: SENSORY EXPERIENCE...");
+  console.log("🛠️ Studio V1 - Grid Sistemi Güncelleniyor...");
 
   if (!fs.existsSync(srcDir)) {
-    console.error("❌ 'src' directory not found.");
+    console.error("❌ 'src' klasörü bulunamadı.");
     process.exit(1);
   }
 
-  // 1. Create Audio Components
+  // Work Sayfasını Güncelle
+  writeFile(path.join(srcDir, "app/work/page.tsx"), workPageContent);
+
+  // Anasayfa Projeler Bölümünü Güncelle
   writeFile(
-    path.join(srcDir, "components/ui/AudioProvider.tsx"),
-    TEMPLATES.audioProvider,
-  );
-  writeFile(
-    path.join(srcDir, "components/ui/AudioToggle.tsx"),
-    TEMPLATES.audioToggle,
+    path.join(srcDir, "components/home/ProjectsSection.tsx"),
+    projectsSectionContent,
   );
 
-  // 2. Create Scroll Progress
-  writeFile(
-    path.join(srcDir, "components/ui/ScrollProgress.tsx"),
-    TEMPLATES.scrollProgress,
+  console.log("------------------------------------------------");
+  console.log("✨ GÜNCELLEME TAMAMLANDI ✨");
+  console.log("------------------------------------------------");
+  console.log("Yapılan Değişiklikler:");
+  console.log(
+    "1. /work sayfası 2'li Grid (md:grid-cols-2) yapısına geçirildi.",
   );
-
-  // 3. Update Layout
-  writeFile(path.join(srcDir, "app/layout.tsx"), TEMPLATES.layoutUpdate);
-
-  // 4. Polish Global CSS
-  writeFile(path.join(srcDir, "styles/globals.css"), TEMPLATES.globalCss);
-
-  log("------------------------------------------------");
-  console.log(`${COLORS.green}✔ PHASE 8 COMPLETE${COLORS.reset}`);
-  log("New Sensory Features:");
-  log(
-    "1. Audio Engine: Interaction sounds (Muted by default, user can toggle)",
+  console.log("2. Anasayfa (ProjectsSection) 2'li Grid yapısına geçirildi.");
+  console.log(
+    "3. Her proje kartına 'Görsel + Başlık + Uzun Açıklama' eklendi.",
   );
-  log("2. Visual Feedback: Scroll Progress Bar");
-  log("3. Aesthetic: Custom Text Selection & Scrollbar");
-  log("------------------------------------------------");
-  console.log("👉 The Studio V1 project is now fully featured.");
-  console.log("   Ready for: Content Population & Production Build.");
+  console.log(
+    "4. Tipografi 'font-light' ve 'Manrope' kurallarına göre ayarlandı.",
+  );
+  console.log("------------------------------------------------");
+  console.log(
+    "👉 Değişiklikleri görmek için terminalden tekrar başlatmana gerek yok, HMR devreye girecektir.",
+  );
 }
 
 main();

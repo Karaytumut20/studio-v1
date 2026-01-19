@@ -1,66 +1,85 @@
 'use client';
 
 import { WORKS } from "@/data/works";
+import { useRef } from "react";
+import Link from "next/link";
+import ParallaxImage from "@/components/ui/ParallaxImage";
+import TextReveal from "@/components/ui/TextReveal";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Link from "next/link";
-import { useRef } from "react";
-import ParallaxImage from "@/components/ui/ParallaxImage";
 
 export default function WorkPage() {
   const container = useRef(null);
 
   useGSAP(() => {
-    // Staggered entrance
-    gsap.from('.work-row', {
-      y: 100,
-      opacity: 0,
-      duration: 1,
-      stagger: 0.1,
-      ease: "power3.out",
-      scrollTrigger: {
-        trigger: container.current,
-        start: "top 80%"
-      }
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Grid elemanlarının sırayla (stagger) gelmesi için basit bir animasyon
+    const items = gsap.utils.toArray('.work-item');
+
+    items.forEach((item: any, i) => {
+      gsap.from(item, {
+        y: 50,
+        opacity: 0,
+        duration: 1,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: item,
+          start: "top 85%",
+        }
+      });
     });
+
   }, { scope: container });
 
   return (
-    <div ref={container} className="pt-40 pb-20 px-page-padding">
-      <div className="mb-32">
-        <h1 className="text-display uppercase font-bold tracking-tighter leading-[0.85] mb-8">
-          Work<br />Archive
+    <div ref={container} className="pt-32 pb-20 px-page-padding">
+      <div className="mb-24">
+        <h1 className="text-display uppercase font-light tracking-tighter leading-[0.85] mb-8">
+          <TextReveal>Work</TextReveal>
+          <TextReveal delay={0.1}>Archive</TextReveal>
         </h1>
-        <div className="h-[1px] w-full bg-black/10" />
+        <div className="h-[1px] w-full bg-black/10 mt-8" />
       </div>
 
-      <div className="flex flex-col">
+      {/* 2'li Grid Sistemi */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-24 md:gap-y-32">
         {WORKS.map((work, index) => (
           <Link
             key={work.id}
             href={`/work/${work.id}`}
-            className="work-row group border-b border-black/10 py-20 flex flex-col md:flex-row gap-10 md:gap-20 transition-colors hover:bg-neutral-50"
+            className="work-item group block w-full"
           >
-            {/* Index */}
-            <span className="font-mono text-sm opacity-40 w-12 pt-2">0{index + 1}</span>
-
-            {/* Main Content */}
-            <div className="flex-1">
-               <h2 className="text-6xl md:text-8xl font-bold uppercase tracking-tighter mb-4 group-hover:translate-x-4 transition-transform duration-500">
-                 {work.title}
-               </h2>
-               <div className="flex gap-4 text-sm uppercase tracking-widest opacity-60">
-                 <span>{work.category}</span>
-                 <span>—</span>
-                 <span>{work.year}</span>
+            {/* Görsel Alanı */}
+            <div className="w-full aspect-[4/3] overflow-hidden bg-neutral-100 mb-8 relative">
+               <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-1000 ease-[0.25,1,0.5,1]">
+                 <ParallaxImage src={work.coverImage} alt={work.title} speed={1.1} />
                </div>
             </div>
 
-            {/* Hover Image Reveal (Desktop) & Static Image (Mobile) */}
-            <div className="w-full md:w-[400px] aspect-video md:aspect-[4/3] relative overflow-hidden bg-neutral-200">
-               <div className="absolute inset-0 group-hover:scale-110 transition-transform duration-700">
-                 <ParallaxImage src={work.coverImage} alt={work.title} speed={1.05} />
+            {/* İçerik Alanı */}
+            <div className="flex flex-col gap-4">
+               {/* Başlık ve Kategori */}
+               <div className="flex justify-between items-baseline border-b border-black/10 pb-4">
+                  <h2 className="text-h3 font-light uppercase tracking-tight group-hover:underline underline-offset-4 decoration-1">
+                    {work.title}
+                  </h2>
+                  <span className="text-xs font-mono opacity-40 uppercase tracking-widest">
+                    {work.category} — {work.year}
+                  </span>
+               </div>
+
+               {/* Uzun Açıklama */}
+               <p className="text-body font-light opacity-70 leading-relaxed text-justify">
+                 {work.description}
+               </p>
+
+               {/* Read More Linki (Opsiyonel Estetik) */}
+               <div className="pt-2">
+                 <span className="text-xs uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">
+                   ( View Case )
+                 </span>
                </div>
             </div>
           </Link>

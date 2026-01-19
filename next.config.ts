@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     domains: ['images.unsplash.com'],
   },
   experimental: {
-    // reactCompiler: false, // Ensure compiler is off as requested
+    reactCompiler: false, // Prompt gereği kapatıldı
   }
 };
 
